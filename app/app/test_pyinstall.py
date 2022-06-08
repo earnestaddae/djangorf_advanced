@@ -1,5 +1,14 @@
 import pytest
 
 
-def test_pyinstall():
-    assert "Earnest" == "Earnest"
+def add(a,b):
+    return a + b
+
+def subtract(a,b):
+    return a - b
+
+def test_add():
+    assert add(3, 2) == 5
+
+def test_subtractions():
+    assert subtract(8,7) == 1
