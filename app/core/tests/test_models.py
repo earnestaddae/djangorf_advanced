@@ -18,3 +18,8 @@ class TestModel:
 
         assert user.email == email
         assert user.check_password(password) == True
+
+
+    def test_new_user_without_email_raises_error(self):
+        with pytest.raises(ValueError):
+            get_user_model().objects.create_user('', 'falsepass')
