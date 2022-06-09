@@ -2,8 +2,11 @@ asgiref==3.5.2
 attrs==21.4.0
 Django==4.0.5
 djangorestframework==3.13.1
+drf-spectacular==0.22.1
 flake8==4.0.1
+inflection==0.5.1
 iniconfig==1.1.1
+jsonschema==4.6.0
 mccabe==0.6.1
 mock==4.0.3
 packaging==21.3
@@ -13,9 +16,12 @@ py==1.11.0
 pycodestyle==2.8.0
 pyflakes==2.4.0
 pyparsing==3.0.9
+pyrsistent==0.18.1
 pytest==7.1.2
 pytest-django==4.5.2
 pytest-mock==3.7.0
 pytz==2022.1
+PyYAML==6.0
 sqlparse==0.4.2
 tomli==2.0.1
+uritemplate==4.1.1
