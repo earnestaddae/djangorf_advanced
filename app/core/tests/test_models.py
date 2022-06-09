@@ -15,11 +15,19 @@ class TestModel:
             email=email,
             password=password,
         )
-
         assert user.email == email
         assert user.check_password(password) == True
-
 
     def test_new_user_without_email_raises_error(self):
         with pytest.raises(ValueError):
             get_user_model().objects.create_user('', 'falsepass')
+
+    def test_create_superuser(self):
+        user = get_user_model().objects.create_superuser(
+            email='testsuper@example.com',
+            password='passme123',
+        )
+        assert user.is_superuser  == True
+        assert user.is_staff  == True
+
+
