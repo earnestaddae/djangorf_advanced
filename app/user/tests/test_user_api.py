@@ -9,6 +9,7 @@ from rest_framework import status
 pytestmark = pytest.mark.django_db
 
 CREATE_USER_URL = reverse('user:create')
+TOKEN_URL = reverse('user:token')
 
 
 def create_user(email='pholder@example.com', **kwargs):
@@ -46,3 +47,31 @@ class TestPublicUserAPI:
         res = client.post(CREATE_USER_URL, data=payload)
         user_exists = get_user_model().objects.filter(email=payload['email']).exists()
         assert user_exists == False
+
+    def test_create_token_for_user(self, client: APIClient):
+        user_details = {
+            'name': "Test Name",
+            'email': "testus@example.com",
+            'password': 'passme123',
+        }
+        create_user(**user_details)
+        payload = {
+            'email': user_details['email'],
+            'password': user_details['password']
+        }
+        res = client.post(TOKEN_URL, data=payload)
+        assert res.status_code == status.HTTP_200_OK
+        assert 'token' in res.data
+
+    def test_create_token_bad_credentials(self, client: APIClient):
+        create_user(email='tester@example.com', password='passme123')
+        payload = {'email': 'tester@example.com', 'password': 'failed123'}
+        res = client.post(TOKEN_URL, data=payload)
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'token' not in res.data
+
+    def test_create_token_blank_password(self, client: APIClient):
+        payload = {'email': 'tester@example.com', 'password': ''}
+        res = client.post(TOKEN_URL, data=payload)
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'token' not in res.data
