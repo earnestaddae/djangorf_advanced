@@ -15,6 +15,10 @@ pytestmark = pytest.mark.django_db
 
 TAGS_URL = reverse('recipe:tag-list')
 
+def detail_url(tag_id):
+    return reverse('recipe:tag-detail', args=[tag_id])
+
+
 @pytest.fixture
 def tag_user():
     email = 'testme@example.com'
@@ -62,6 +66,29 @@ class TestPrivateTagAPI:
         assert len(res.data) == 1
         assert res.data[0]['name'] == tag.name
         assert res.data[0]['id'] == tag.id
+
+
+    def test_update_tag(self, api_client, tag_user):
+        tag = Tag.objects.create(user=tag_user, name='Dinner')
+
+        payload = {'name': 'Dessert'}
+        url = detail_url(tag.id)
+
+        res = api_client.patch(url, data=payload)
+        tag.refresh_from_db()
+
+        assert res.status_code == status.HTTP_200_OK
+        assert tag.name == payload['name']
+
+    def test_delete_tag(self, api_client, tag_user):
+        tag = Tag.objects.create(user=tag_user, name='Breakfast')
+
+        url = detail_url(tag.id)
+
+        res = api_client.delete(url)
+        tags = Tag.objects.filter(user=tag_user)
+        assert res.status_code == status.HTTP_204_NO_CONTENT
+        assert tags.exists() == False
 
 
 
