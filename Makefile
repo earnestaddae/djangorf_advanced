@@ -1,5 +1,5 @@
 docker_test:
-	docker-compose run --rm app sh -c "pytest -v"
+	docker-compose run --rm app sh -c "pytest --cov=."
 
 docker_migrate:
 	docker-compose run --rm app sh -c "python manage.py migrate"
