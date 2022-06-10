@@ -206,5 +206,44 @@ class TestPrivateRecipeAPI:
             exists = recipe.tags.filter(name=tag['name'], user=recipe_user).exists()
             assert exists == True
 
+    def test_create_tag_on_recipe_update(self, api_client, recipe_user):
+        recipe = create_recipe(user=recipe_user)
+        payload = {'tags': [{'name': 'Brunch'},]}
+        url = detail_url(recipe.id)
+
+        res = api_client.patch(url, data=payload, format='json')
+
+        assert res.status_code == status.HTTP_200_OK
+        find_tag = Tag.objects.get(user=recipe_user, name='Brunch')
+        assert find_tag == recipe.tags.all()[0]
+
+    def test_upate_recipe_assign_tag(self, api_client, recipe_user):
+        tag_breakfast = Tag.objects.create(user=recipe_user, name='Breakfast')
+        recipe = create_recipe(user=recipe_user)
+        recipe.tags.add(tag_breakfast)
+
+        tag_lunch = Tag.objects.create(user=recipe_user, name='Lunch')
+        payload = {'tags': [{'name': 'Lunch'}]}
+        url = detail_url(recipe.id)
+
+        res = api_client.patch(url, data=payload, format='json')
+        assert res.status_code == status.HTTP_200_OK
+        assert recipe.tags.count() == 1
+        assert tag_lunch == recipe.tags.first()
+        assert tag_breakfast != recipe.tags.first()
+
+    def test_clear_recipe_tags(self, api_client, recipe_user):
+        tag = Tag.objects.create(user=recipe_user, name='Yummy')
+        recipe = create_recipe(user=recipe_user)
+        recipe.tags.add(tag)
+
+        payload = {'tags': []}
+        url = detail_url(recipe.id)
+        res = api_client.patch(url, data=payload, format='json')
+
+        assert res.status_code == status.HTTP_200_OK
+        assert recipe.tags.count() == 0
+
+
 
 
