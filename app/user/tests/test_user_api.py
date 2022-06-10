@@ -90,26 +90,26 @@ def registered_user():
     )
     return user
 
+@pytest.fixture
+def api_client(registered_user):
+    client = APIClient()
+    client.force_authenticate(user=registered_user)
+    return client
+
 
 class TestPrivateUserAPI:
-    def test_retrieve_profile_success(self, registered_user):
-        client = APIClient()
-        client.force_authenticate(user=registered_user)
-        res = client.get(ME_URL)
+    def test_retrieve_profile_success(self, registered_user, api_client):
+        res = api_client.get(ME_URL)
         assert res.status_code == status.HTTP_200_OK
         assert res.data == {'name': registered_user.name, 'email': registered_user.email}
 
-    def test_post_me_not_allowed(self, registered_user):
-        client = APIClient()
-        client.force_authenticate(user=registered_user)
-        res = client.post(ME_URL, {})
+    def test_post_me_not_allowed(self, registered_user, api_client):
+        res = api_client.post(ME_URL, {})
         assert res.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
-    def test_update_user_profile(self, registered_user):
+    def test_update_user_profile(self, registered_user, api_client):
         payload = {'name': "Name Update", 'password': '123passme'}
-        client = APIClient()
-        client.force_authenticate(user=registered_user)
-        res = client.patch(ME_URL, payload)
+        res = api_client.patch(ME_URL, payload)
         registered_user.refresh_from_db()
         assert registered_user.name == payload['name']
         assert registered_user.check_password(payload['password']) == True
