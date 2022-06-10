@@ -1,7 +1,9 @@
 import pytest
 
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 
+from core import models
 
 pytestmark = pytest.mark.django_db
 
@@ -29,5 +31,19 @@ class TestModel:
         )
         assert user.is_superuser  == True
         assert user.is_staff  == True
+
+    def test_create_recipe(self):
+        user = get_user_model().objects.create(
+            email='tested@example.com',
+            password='passme123'
+        )
+        recipe = models.Recipe.objects.create(
+            user=user,
+            title='Sample recipe title',
+            time_minutes=5,
+            price=Decimal('5.50'),
+            description='Sample recipe description',
+        )
+        assert str(recipe) == recipe.title
 
 
