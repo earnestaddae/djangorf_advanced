@@ -45,8 +45,6 @@ def api_client(recipe_user):
     return client
 
 
-
-
 class TestPublicRecipeAPI:
 
     def test_auth_required(self, client):
