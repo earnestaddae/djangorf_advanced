@@ -10,6 +10,7 @@ pytestmark = pytest.mark.django_db
 
 CREATE_USER_URL = reverse('user:create')
 TOKEN_URL = reverse('user:token')
+ME_URL = reverse('user:me')
 
 
 def create_user(email='pholder@example.com', **kwargs):
@@ -75,3 +76,41 @@ class TestPublicUserAPI:
         res = client.post(TOKEN_URL, data=payload)
         assert res.status_code == status.HTTP_400_BAD_REQUEST
         assert 'token' not in res.data
+
+    def test_retrieve_user_unauthorized(self, client: APIClient):
+        res = client.get(ME_URL)
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+@pytest.fixture
+def registered_user():
+    user = create_user(
+        email='tested@example.com',
+        password='passme123',
+        name='Tested Name',
+    )
+    return user
+
+
+class TestPrivateUserAPI:
+    def test_retrieve_profile_success(self, registered_user):
+        client = APIClient()
+        client.force_authenticate(user=registered_user)
+        res = client.get(ME_URL)
+        assert res.status_code == status.HTTP_200_OK
+        assert res.data == {'name': registered_user.name, 'email': registered_user.email}
+
+    def test_post_me_not_allowed(self, registered_user):
+        client = APIClient()
+        client.force_authenticate(user=registered_user)
+        res = client.post(ME_URL, {})
+        assert res.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+    def test_update_user_profile(self, registered_user):
+        payload = {'name': "Name Update", 'password': '123passme'}
+        client = APIClient()
+        client.force_authenticate(user=registered_user)
+        res = client.patch(ME_URL, payload)
+        registered_user.refresh_from_db()
+        assert registered_user.name == payload['name']
+        assert registered_user.check_password(payload['password']) == True
+        assert res.status_code == status.HTTP_200_OK
