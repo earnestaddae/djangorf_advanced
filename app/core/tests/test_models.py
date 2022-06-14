@@ -55,4 +55,9 @@ class TestModel:
         tag = models.Tag.objects.create(user=user, name="Tag1")
         assert str(tag) == tag.name
 
+    def test_create_ingredient(self, create_user):
+        user = create_user
+        ingredient = models.Ingredient.objects.create(user=user, name='Ingredient1')
+        assert str(ingredient) == ingredient.name
+
 
