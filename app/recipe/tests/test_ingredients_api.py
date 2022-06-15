@@ -69,6 +69,17 @@ class TestPrivateIngredientsAPI:
         assert res.data[0]['name'] == ingredient.name
         assert res.data[0]['id'] == ingredient.id
 
+    def test_update_ingredient(self, api_client, ingredient_user):
+        ingredient = Ingredient.objects.create(user=ingredient_user, name='Pear')
+        payload = {'name': 'Orange'}
+
+        url = detail_url(ingredient.id)
+
+        res = api_client.patch(url, data=payload)
+        assert res.status_code == status.HTTP_200_OK
+        ingredient.refresh_from_db() # required to refresh the database.
+        assert ingredient.name == payload['name']
+
 
 
 
