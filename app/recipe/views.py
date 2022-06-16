@@ -38,7 +38,6 @@ class TagViewSet(BaseRecipeAttrViewSet):
     queryset = Tag.objects.all()
 
 
-
 class IngredientViewSet(BaseRecipeAttrViewSet):
     serializer_class = serializers.IngredientSerializer
     queryset = Ingredient.objects.all()
