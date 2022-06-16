@@ -217,7 +217,7 @@ class TestPrivateRecipeAPI:
         find_tag = Tag.objects.get(user=recipe_user, name='Brunch')
         assert find_tag == recipe.tags.all()[0]
 
-    def test_upate_recipe_assign_tag(self, api_client, recipe_user):
+    def test_update_recipe_assign_tag(self, api_client, recipe_user):
         tag_breakfast = Tag.objects.create(user=recipe_user, name='Breakfast')
         recipe = create_recipe(user=recipe_user)
         recipe.tags.add(tag_breakfast)
@@ -280,6 +280,47 @@ class TestPrivateRecipeAPI:
         for ingredient in payload['ingredients']:
             exists = recipe.ingredients.filter(name=ingredient['name'], user=recipe_user).exists()
             assert exists == True
+
+    def test_create_ingredient_on_update(self, api_client, recipe_user):
+        recipe = create_recipe(user=recipe_user)
+
+        payload = {'ingredients': [{'name': 'Oranges'}]}
+        url = detail_url(recipe.id)
+        res = api_client.patch(url, data=payload, format='json')
+        assert res.status_code == status.HTTP_200_OK
+        retrieve_ingredient = Ingredient.objects.filter(user=recipe_user, name='Oranges').first()
+        assert retrieve_ingredient == recipe.ingredients.first()
+        assert retrieve_ingredient.name == recipe.ingredients.first().name
+
+    def test_update_recipe_assign_ingredient(self, api_client, recipe_user):
+        ingredient1 = Ingredient.objects.create(user=recipe_user, name='Pepper')
+        recipe = create_recipe(user=recipe_user)
+        recipe.ingredients.add(ingredient1)
+
+        ingredient2 = Ingredient.objects.create(user=recipe_user, name='Chilli')
+        payload = {'ingredients': [{'name': 'Chilli'}]}
+        url = detail_url(recipe.id)
+
+        res = api_client.patch(url, data=payload, format='json')
+
+        assert res.status_code == status.HTTP_200_OK
+        assert ingredient2 == recipe.ingredients.all().first()
+        assert ingredient1 != recipe.ingredients.all().first()
+
+    def test_clear_recipe_ingredients(self, api_client, recipe_user):
+        ingredient = Ingredient.objects.create(user=recipe_user, name='Ginger')
+        recipe = create_recipe(user=recipe_user)
+        recipe.ingredients.add(ingredient)
+
+        payload = {'ingredients': []}
+        url = detail_url(recipe.id)
+
+        res = api_client.patch(url, data=payload, format='json')
+
+        assert res.status_code == status.HTTP_200_OK
+        assert recipe.ingredients.count() == 0
+        assert recipe.ingredients.count() != 1
+
 
 
 
