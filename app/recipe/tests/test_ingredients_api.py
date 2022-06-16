@@ -80,6 +80,17 @@ class TestPrivateIngredientsAPI:
         ingredient.refresh_from_db() # required to refresh the database.
         assert ingredient.name == payload['name']
 
+    def test_delete_ingredient(self, api_client, ingredient_user):
+        ingredient = Ingredient.objects.create(user=ingredient_user, name='Mango')
+
+        url = detail_url(ingredient.id)
+
+        res = api_client.delete(url)
+
+        assert res.status_code == status.HTTP_204_NO_CONTENT
+        ingredients = Ingredient.objects.filter(user=ingredient_user)
+        assert ingredients.exists() == False
+
 
 
 
