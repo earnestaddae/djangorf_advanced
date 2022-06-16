@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Recipe, Tag
+from core.models import Recipe, Tag, Ingredient
 
 from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
@@ -243,6 +243,43 @@ class TestPrivateRecipeAPI:
 
         assert res.status_code == status.HTTP_200_OK
         assert recipe.tags.count() == 0
+
+    def test_create_recipe_with_new_ingredients(self, api_client, recipe_user):
+        payload = {
+            'title': 'Banku with Okro soup',
+            'time_minutes': 60,
+            'price': Decimal('5.90'),
+            'ingredients': [{'name': 'Corn Dough'}, {'name': 'Okro'}],
+        }
+
+        res = api_client.post(RECIPES_URL, data=payload, format='json')
+        assert res.status_code == status.HTTP_201_CREATED
+        recipes = Recipe.objects.filter(user=recipe_user)
+        assert recipes.count() == 1
+        recipe = recipes.first()
+        assert recipe.ingredients.count() == 2
+        for ingredient in payload['ingredients']:
+            exists = recipe.ingredients.filter(name=ingredient['name'], user=recipe_user).exists()
+            assert exists == True
+
+    def test_create_recipe_with_existing_ingredients(self, api_client, recipe_user):
+        ingredient = Ingredient.objects.create(user=recipe_user, name='Potato')
+        payload = {
+            'title': 'Potato Soup',
+            'time_minutes': 23,
+            'price': Decimal('3.55'),
+            'ingredients': [{'name': 'Potato'}, {'name': 'Chilli'}],
+        }
+        res = api_client.post(RECIPES_URL, data=payload, format='json')
+        assert res.status_code == status.HTTP_201_CREATED
+        recipes = Recipe.objects.filter(user=recipe_user)
+        assert recipes.count() == 1
+        recipe = recipes.first()
+        assert recipe.ingredients.count() == 2
+        assert ingredient == recipe.ingredients.all().first()
+        for ingredient in payload['ingredients']:
+            exists = recipe.ingredients.filter(name=ingredient['name'], user=recipe_user).exists()
+            assert exists == True
 
 
 
