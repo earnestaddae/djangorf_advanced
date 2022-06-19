@@ -6,7 +6,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Tag
+from core.models import Tag, Recipe
 
 from recipe.serializers import TagSerializer
 
@@ -89,6 +89,32 @@ class TestPrivateTagAPI:
         tags = Tag.objects.filter(user=tag_user)
         assert res.status_code == status.HTTP_204_NO_CONTENT
         assert tags.exists() == False
+
+    def test_filter_tags_assigned_to_recipes(self, api_client, tag_user):
+        tag1 = Tag.objects.create(user=tag_user, name='Breakfast')
+        tag2 = Tag.objects.create(user=tag_user, name='Brunch')
+        recipe = Recipe.objects.create(title='Muffins', time_minutes=4, price=Decimal('4.3'), user=tag_user)
+        recipe.tags.add(tag1)
+
+        res = api_client.get(TAGS_URL, {'assigned_only': 1})
+        assert res.status_code == status.HTTP_200_OK
+
+        s1 = TagSerializer(tag1)
+        s2 = TagSerializer(tag2)
+
+        assert s1.data in res.json()
+        assert s2.data not in res.json()
+
+    def test_filtered_unique_tags(self, api_client, tag_user):
+        tag = Tag.objects.create(user=tag_user, name='Lunch')
+        Tag.objects.create(user=tag_user, name='Dinner')
+        recipe1 = Recipe.objects.create(title='Pork soup', time_minutes=4, price=Decimal('4.3'), user=tag_user)
+        recipe2 = Recipe.objects.create(title='Beef soup', time_minutes=4, price=Decimal('4.1'), user=tag_user)
+        recipe1.tags.add(tag)
+        recipe2.tags.add(tag)
+
+        res = api_client.get(TAGS_URL, {'assigned_only': 1})
+        assert len(res.data) == 1
 
 
 

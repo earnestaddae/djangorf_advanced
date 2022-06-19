@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -5,8 +7,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from core.models import Ingredient
-
+from core.models import Ingredient, Recipe
 from recipe.serializers import IngredientSerializer
 
 
@@ -90,6 +91,32 @@ class TestPrivateIngredientsAPI:
         assert res.status_code == status.HTTP_204_NO_CONTENT
         ingredients = Ingredient.objects.filter(user=ingredient_user)
         assert ingredients.exists() == False
+
+    def test_filter_ingredients_assigned_to_recipes(self, api_client, ingredient_user):
+        in1 = Ingredient.objects.create(user=ingredient_user, name='Chicken')
+        in2 = Ingredient.objects.create(user=ingredient_user, name='Beef')
+        recipe = Recipe.objects.create(title='Chicken soup', time_minutes=4, price=Decimal('4.3'), user=ingredient_user)
+        recipe.ingredients.add(in1)
+
+        res = api_client.get(INGREDIENTS_URL, {'assigned_only': 1})
+        assert res.status_code == status.HTTP_200_OK
+
+        s1 = IngredientSerializer(in1)
+        s2 = IngredientSerializer(in2)
+
+        assert s1.data in res.json()
+        assert s2.data not in res.json()
+
+    def test_filtered_unique_ingredients(self, api_client, ingredient_user):
+        ing = Ingredient.objects.create(user=ingredient_user, name='Pan Cakes')
+        Ingredient.objects.create(user=ingredient_user, name='mango')
+        recipe1 = Recipe.objects.create(title='Pancake soup', time_minutes=4, price=Decimal('4.3'), user=ingredient_user)
+        recipe2 = Recipe.objects.create(title='Pumpkin soup', time_minutes=4, price=Decimal('4.1'), user=ingredient_user)
+        recipe1.ingredients.add(ing)
+        recipe2.ingredients.add(ing)
+
+        res = api_client.get(INGREDIENTS_URL, {'assigned_only': 1})
+        assert len(res.data) == 1
 
 
 

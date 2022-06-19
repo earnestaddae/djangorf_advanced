@@ -71,7 +71,8 @@ class TestPrivateRecipeAPI:
         recipes = Recipe.objects.all().order_by('-id')
         serializer = RecipeSerializer(recipes, many=True)
         assert res.status_code == status.HTTP_200_OK
-        assert res.data == serializer.data
+        assert len(res.data) == len(serializer.data)
+        print(res.json())
 
     def test_recipe_list_limited_to_user(self, api_client, recipe_user):
         other_user = get_user_model().objects.create_user(email='other@example.com', password='other123')
@@ -328,6 +329,50 @@ class TestPrivateRecipeAPI:
         assert res.status_code == status.HTTP_200_OK
         assert recipe.ingredients.count() == 0
         assert recipe.ingredients.count() != 1
+
+    def test_filter_by_tags(self, api_client, recipe_user):
+        r1 = create_recipe(user=recipe_user, title='Recipe 1')
+        r2 = create_recipe(user=recipe_user, title='Recipe 2')
+        t1 = Tag.objects.create(user=recipe_user, name='Tag for recipe 1')
+        t2 = Tag.objects.create(user=recipe_user, name='Tag for recipe 2')
+        r1.tags.add(t1)
+        r2.tags.add(t2)
+        r3 = create_recipe(user=recipe_user, title='Recipe 3')
+
+        params = {'tags': f"{t1.id},{t2.id}"}
+        res = api_client.get(RECIPES_URL, params)
+
+        assert res.status_code == status.HTTP_200_OK
+        s1 = RecipeSerializer(r1)
+        s2 = RecipeSerializer(r2)
+        s3 = RecipeSerializer(r3)
+
+
+        assert s1.data in res.json()
+        assert s2.data in res.json()
+        assert s3.data not in res.json()
+
+    def test_filter_by_ingredients(self, api_client, recipe_user):
+        r1 = create_recipe(user=recipe_user, title='Manage 1')
+        r2 = create_recipe(user=recipe_user, title='Manage 2')
+        in1 = Ingredient.objects.create(user=recipe_user, name='Ingredient for manage 1')
+        in2 = Ingredient.objects.create(user=recipe_user, name='Ingredient for manage 2')
+        r1.ingredients.add(in1)
+        r2.ingredients.add(in2)
+        r3 = create_recipe(user=recipe_user, title='Manage 3')
+
+        params = {'ingredients': f"{in1.id},{in2.id}"}
+        res = api_client.get(RECIPES_URL, params)
+
+        assert res.status_code == status.HTTP_200_OK
+        s1 = RecipeSerializer(r1)
+        s2 = RecipeSerializer(r2)
+        s3 = RecipeSerializer(r3)
+
+        assert s1.data in res.json()
+        assert s2.data in res.json()
+        assert s3.data not in res.json()
+
 
 
 class TestImageUpload:
